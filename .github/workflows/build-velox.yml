@@ -30,7 +30,13 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-37.0 build-tools;37.0.0'
 
-      - name: Add Android 37 SDK alias for Gradle\n        run: |\n          if [ -d \"$ANDROID_HOME/platforms/android-37.0\" ] && [ ! -e \"$ANDROID_HOME/platforms/android-37\" ]; then\n            ln -s android-37.0 \"$ANDROID_HOME/platforms/android-37\"\n          fi\n\n      - name: Install NDK and compile native tunnel
+      - name: Add Android 37 SDK alias for Gradle
+        run: |
+          if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
+          fi
+
+      - name: Install NDK and compile native tunnel
         working-directory: source
         shell: bash
         run: |
