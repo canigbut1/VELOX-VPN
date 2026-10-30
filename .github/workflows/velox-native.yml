@@ -28,6 +28,16 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+      - name: Fetch official XTLS libXray Android engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/libs
+          curl -fL --retry 3 \
+            https://github.com/XTLS/libXray/releases/download/v26.10.29/libxray-android.zip \
+            -o /tmp/libxray-android.zip
+          unzip -j /tmp/libxray-android.zip '*libXray.aar' -d app/libs
+          test -s app/libs/libXray.aar
       - name: Build arm64 APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Publish APK
