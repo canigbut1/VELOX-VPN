@@ -28,7 +28,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools platforms;android-37 build-tools;37.0.0'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Install NDK and compile native tunnel
         working-directory: source
@@ -37,6 +37,7 @@ jobs:
           yes | sdkmanager --install "ndk;30.0.16248370"
           export NDK_HOME="$ANDROID_HOME/ndk/30.0.16248370"
           sed -i '/android {/a\    ndkVersion = "30.0.16248370"' V2rayNG/app/build.gradle.kts
+          sed -i 's/compileSdk = 37/compileSdk = 36/; s/targetSdk = 37/targetSdk = 36/' V2rayNG/app/build.gradle.kts
           bash compile-hevtun.sh
           mkdir -p V2rayNG/app/libs
           cp -R libs/. V2rayNG/app/libs/
