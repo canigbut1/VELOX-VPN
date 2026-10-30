@@ -63,7 +63,7 @@ jobs:
           gradle = Path("V2rayNG/app/build.gradle.kts")
           s = gradle.read_text()
           s = re.sub(r'applicationId = "com\\.v2ray\\.ang"', 'applicationId = "com.velox.vpn"', s)
-          s = re.sub(r'versionCode = \\d+', 'versionCode = 1', s)
+          s = re.sub(r'versionCode = \d+', 'versionCode = 1', s)
           s = re.sub(r'versionName = "[^"]+"', 'versionName = "1.0.0"', s)
           gradle.write_text(s)
 
@@ -88,7 +88,7 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           chmod +x gradlew
           ./gradlew assemblePlaystoreRelease -PABI_FILTERS=arm64-v8a --no-daemon
-          find app/build/outputs/apk -type f -name '*.apk' -print -exec test -s {} ;
+          find app/build/outputs/apk -type f -name '*.apk' -print
 
       - name: Collect APK and licensing notices
         shell: bash
