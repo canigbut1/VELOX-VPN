@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.util.Base64
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -152,7 +153,7 @@ fun VeloxHome(context: Context) {
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text("افزودن کانفیگ", color = Color.White, fontWeight = FontWeight.Bold)
-                        Text("فعلاً لینک VLESS، VMess، Trojan و SS", color = Muted, fontSize = 10.sp)
+                        Text("لینک تکی یا آدرس اشتراک سرورها", color = Muted, fontSize = 10.sp)
                     }
                     Spacer(Modifier.weight(1f))
                     Text("وارد کردن", color = Cyan, fontSize = 11.sp)
@@ -171,12 +172,12 @@ fun VeloxHome(context: Context) {
             title = { Text("افزودن کانفیگ", color = Color.White) },
             text = {
                 Column {
-                    Text("لینک کانفیگ را اینجا وارد یا جای‌گذاری کن:", color = Muted, fontSize = 12.sp)
+                    Text("لینک کانفیگ یا آدرس اشتراک را وارد کن:", color = Muted, fontSize = 12.sp)
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = linkText,
                         onValueChange = { linkText = it.trim() },
-                        placeholder = { Text("vless:// یا vmess:// ...") },
+                        placeholder = { Text("vless://… یا https://…") },
                         minLines = 3,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White, unfocusedTextColor = Color.White,
@@ -193,7 +194,7 @@ fun VeloxHome(context: Context) {
             confirmButton = {
                 TextButton(onClick = {
                     val candidate = linkText.trim()
-                    val valid = listOf("vless://", "vmess://", "trojan://", "ss://").any { candidate.startsWith(it, true) }
+                    val valid = listOf("vless://", "vmess://", "trojan://", "ss://", "socks://", "wireguard://", "hy2://", "hysteria2://", "tuic://", "https://", "http://").any { candidate.startsWith(it, true) }
                     if (!valid) {
                         Toast.makeText(context, "لینک معتبر نیست یا فرمت آن پشتیبانی نمی‌شود.", Toast.LENGTH_LONG).show()
                     } else if (configs.contains(candidate)) {
