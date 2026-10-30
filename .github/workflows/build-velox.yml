@@ -1,0 +1,82 @@
+name: Build VELOX VPN APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout VELOX repository
+        uses: actions/checkout@v4
+
+      - name: Checkout v2rayNG source and submodules
+        run: git clone --depth 1 --recurse-submodules https://github.com/2dust/v2rayNG.git source
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-37 build-tools;37.0.0'
+
+      - name: Install NDK and compile native tunnel
+        working-directory: source
+        shell: bash
+        run: |
+          yes | sdkmanager --install "ndk;30.0.16248370"
+          export NDK_HOME="$ANDROID_HOME/ndk/30.0.16248370"
+          sed -i '/android {/a\    ndkVersion = "30.0.16248370"' V2rayNG/app/build.gradle.kts
+          bash compile-hevtun.sh
+          mkdir -p V2rayNG/app/libs
+          cp -R libs/. V2rayNG/app/libs/
+
+      - name: Download Xray Android library
+        working-directory: source
+        shell: bash
+        run: |
+          TAG="$(git -C AndroidLibXrayLite describe --tags --abbrev=0)"
+          curl -fL "https://github.com/2dust/AndroidLibXrayLite/releases/download/${TAG}/libv2ray.aar" -o V2rayNG/app/libs/libv2ray.aar
+
+      - name: Set VELOX app name
+        working-directory: source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("V2rayNG/app/src/main/res/values/strings.xml")
+          s = p.read_text()
+          s = s.replace('>v2rayNG<', '>VELOX VPN<')
+          p.write_text(s)
+          PY
+
+      - name: Build release APK
+        working-directory: source/V2rayNG
+        shell: bash
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          chmod +x gradlew
+          ./gradlew assemblePlaystoreRelease -PABI_FILTERS=arm64-v8a --no-daemon
+
+      - name: Collect APK
+        shell: bash
+        run: |
+          mkdir -p dist
+          find source/V2rayNG/app/build/outputs/apk -type f -name '*.apk' -exec cp {} dist/VELOX_VPN_arm64.apk \;
+          test -s dist/VELOX_VPN_arm64.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VELOX-VPN-APK
+          path: dist/VELOX_VPN_arm64.apk
+          if-no-files-found: error
