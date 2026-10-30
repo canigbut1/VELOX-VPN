@@ -4,6 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.content.Intent
+import android.net.VpnService
 import android.util.Base64
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -35,11 +37,29 @@ private const val PREFS = "velox_configs"
 private const val CONFIGS = "items"
 
 class MainActivity : ComponentActivity() {
+    private var pendingConfig: String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = android.graphics.Color.rgb(5, 11, 22)
         window.navigationBarColor = android.graphics.Color.rgb(5, 11, 22)
-        setContent { VeloxHome(this) }
+        setContent { VeloxHome(this) { config -> connect(config) } }
+    }
+    private fun connect(config: String) {
+        pendingConfig = config
+        val prepare = VpnService.prepare(this)
+        if (prepare != null) startActivityForResult(prepare, 900) else startVpn(config)
+    }
+    @Deprecated("Deprecated in Android API")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 900 && resultCode == RESULT_OK) pendingConfig?.let { startVpn(it) }
+    }
+    private fun startVpn(config: String) {
+        val intent = Intent(this, VeloxVpnService::class.java).apply {
+            action = VeloxVpnService.ACTION_CONNECT
+            putExtra(VeloxVpnService.EXTRA_CONFIG, config)
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
     }
 }
 
@@ -67,7 +87,7 @@ private fun configLabel(link: String): String {
 }
 
 @Composable
-fun VeloxHome(context: Context) {
+fun VeloxHome(context: Context, onConnect: (String) -> Unit) {
     var configs by remember { mutableStateOf(readConfigs(context)) }
     var selected by remember { mutableIntStateOf(0) }
     var showImport by remember { mutableStateOf(false) }
@@ -108,7 +128,11 @@ fun VeloxHome(context: Context) {
                 contentAlignment = Alignment.Center
             ) {
                 Button(
-                    onClick = { Toast.makeText(context, "موتور اتصال VPN هنوز در حال پیاده‌سازی است؛ فعلاً اتصال فعال نمی‌شود.", Toast.LENGTH_LONG).show() },
+                    onClick = {
+                        val config = configs.getOrNull(selected)
+                        if (config == null) Toast.makeText(context, "اول یک کانفیگ اضافه کن.", Toast.LENGTH_SHORT).show()
+                        else onConnect(config)
+                    },
                     modifier = Modifier.size(132.dp),
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF087DCE))
@@ -205,7 +229,7 @@ fun VeloxHome(context: Context) {
                         selected = configs.lastIndex
                         linkText = ""
                         showImport = false
-                        Toast.makeText(context, "کانفیگ ذخیره شد؛ اتصال هنوز فعال نیست.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "کانفیگ ذخیره شد.", Toast.LENGTH_SHORT).show()
                     }
                 }) { Text("ذخیره", color = Cyan) }
             },
