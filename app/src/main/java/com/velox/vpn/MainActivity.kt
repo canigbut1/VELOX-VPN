@@ -65,11 +65,11 @@ class MainActivity : ComponentActivity() {
 
 private fun readConfigs(context: Context): List<String> =
     context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        .getString(CONFIGS, "")!!.split("\\n").filter { it.isNotBlank() }
+        .getString(CONFIGS, "")!!.split("\n").filter { it.isNotBlank() }
 
 private fun saveConfigs(context: Context, configs: List<String>) {
     context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-        .putString(CONFIGS, configs.joinToString("\\n")).apply()
+        .putString(CONFIGS, configs.joinToString("\n")).apply()
 }
 
 private fun configLabel(link: String): String {
