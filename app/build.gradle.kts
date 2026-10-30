@@ -29,5 +29,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    // Official XTLS libXray Android engine (downloaded and pinned by CI).
+    implementation(files("libs/libXray.aar"))
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
