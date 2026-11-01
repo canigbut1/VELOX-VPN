@@ -70,8 +70,8 @@ jobs:
           gradle = Path("source/V2rayNG/app/build.gradle.kts")
           s = gradle.read_text()
           s = re.sub(r'applicationId\s*=\s*"[^"]+"', 'applicationId = "com.velox.vpn"', s)
-          s = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 2', s)
-          s = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "1.0.1"', s)
+          s = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 3', s)
+          s = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "1.0.2"', s)
           gradle.write_text(s)
 
           # Install the repository's VELOX shield/V mark as the adaptive launcher icon.
@@ -104,22 +104,33 @@ jobs:
           ./gradlew assemblePlaystoreRelease -PABI_FILTERS=arm64-v8a --no-daemon
           find app/build/outputs/apk -type f -name '*.apk' -print
 
-      - name: Collect APK and notices
+      - name: Sign APK with Android apksigner (v2/v3)
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist
           APK="$(find source/V2rayNG/app/build/outputs/apk -type f -name '*.apk' | head -n 1)"
           test -n "$APK"
-          cp "$APK" dist/VELOX_VPN_1.0.1_arm64_unsigned.apk
+          cp "$APK" dist/VELOX_VPN_1.0.2_arm64_unsigned.apk
+          PASS="$(openssl rand -hex 24)"
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/velox-release.jks" \
+            -alias velox -keyalg RSA -keysize 4096 -validity 10000 \
+            -storepass "$PASS" -keypass "$PASS" \
+            -dname "CN=VELOX VPN, OU=Android, O=VELOX, L=Berlin, C=DE"
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" sign \
+            --ks "$RUNNER_TEMP/velox-release.jks" --ks-key-alias velox \
+            --ks-pass "pass:$PASS" --key-pass "pass:$PASS" \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --out dist/VELOX_VPN_1.0.2_arm64.apk dist/VELOX_VPN_1.0.2_arm64_unsigned.apk
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose --print-certs dist/VELOX_VPN_1.0.2_arm64.apk
           cp source/LICENSE dist/UPSTREAM_LICENSE.txt 2>/dev/null || true
           cp source/V2rayNG/LICENSE dist/APP_LICENSE.txt 2>/dev/null || true
           sha256sum dist/*.apk > dist/SHA256SUMS.txt
-          test -s dist/VELOX_VPN_1.0.1_arm64_unsigned.apk
+          test -s dist/VELOX_VPN_1.0.2_arm64.apk
 
-      - name: Upload release candidate
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: VELOX-VPN-1.0.1-ARM64-UNSIGNED
+          name: VELOX-VPN-1.0.2-ARM64-SIGNED
           path: dist/*
           if-no-files-found: error
